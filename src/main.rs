@@ -44,7 +44,7 @@ impl From<String> for Error {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Extension {
     Png,
     Jpeg,
@@ -66,7 +66,6 @@ impl FromStr for Extension {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts = s.split('.').collect::<Vec<_>>();
-        // if there is no extension, return an error of bad format
         let s = parts
             .last()
             .cloned()
@@ -82,7 +81,6 @@ impl FromStr for Extension {
 }
 fn main() {
     if let Err(err) = run() {
-        // add the red color to the error message
         eprintln!("\x1b[31m{}\x1b[0m", err);
         std::process::exit(1);
     }
@@ -102,4 +100,49 @@ fn run() -> Result<(), Error> {
         input_ext, output_ext
     );
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Extension;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_extension_enum_variants() {
+        assert_eq!(format!("{}", Extension::Png), "png");
+        assert_eq!(format!("{}", Extension::Jpeg), "jpeg");
+        assert_eq!(format!("{}", Extension::Webp), "webp");
+    }
+
+    #[test]
+    fn test_from_str_valid_extensions() {
+        assert_eq!(Extension::from_str("file.png").unwrap(), Extension::Png);
+        assert_eq!(Extension::from_str("file.jpg").unwrap(), Extension::Jpeg);
+        assert_eq!(Extension::from_str("file.jpeg").unwrap(), Extension::Jpeg);
+        assert_eq!(Extension::from_str("file.webp").unwrap(), Extension::Webp);
+    }
+
+    #[test]
+    fn test_from_str_invalid_extension() {
+        assert!(Extension::from_str("file.bmp").is_err());
+        assert!(Extension::from_str("file.gif").is_err());
+    }
+
+    #[test]
+    fn test_from_str_no_extension() {
+        assert!(Extension::from_str("file").is_err());
+    }
+
+    #[test]
+    fn test_from_str_empty_string() {
+        assert!(Extension::from_str("").is_err());
+    }
+
+    #[test]
+    fn test_from_str_multiple_dots() {
+        assert_eq!(
+            Extension::from_str("file.some.jpg").unwrap(),
+            Extension::Jpeg
+        );
+    }
 }
